@@ -1,38 +1,35 @@
 package course.concurrency.exams.auction;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 public class AuctionPessimistic implements Auction {
 
     private final Notifier notifier;
-    private final Lock lock = new ReentrantLock();
+    private final Object lock = new Object();
 
     public AuctionPessimistic(Notifier notifier) {
         this.notifier = notifier;
+        this.latestBid = new Bid(0L, 0L, 0L);
     }
 
     private Bid latestBid;
 
     public boolean propose(Bid bid) {
-        lock.lock();
-        try {
-            if (latestBid == null) {
-                latestBid = bid;
-                return true;
-            }
-            if (bid.getPrice() > latestBid.getPrice()) {
-                notifier.sendOutdatedMessage(latestBid);
-                latestBid = bid;
-                return true;
-            }
+        if (bid.getPrice() < latestBid.getPrice()) {
             return false;
-        } finally {
-            lock.unlock();
         }
+
+        synchronized (lock) {
+            if (bid.getPrice() > latestBid.getPrice()) {
+                latestBid = bid;
+                notifier.sendOutdatedMessage(latestBid);
+                return true;
+            }
+        }
+        return false;
     }
 
     public Bid getLatestBid() {
-        return latestBid;
+        synchronized (lock) {
+            return latestBid;
+        }
     }
 }
