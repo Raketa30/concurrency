@@ -13,8 +13,11 @@ public class Notifier {
     private void imitateSending() {
         try {
             Thread.sleep(2000);
-        } catch (InterruptedException e) {}
+        } catch (InterruptedException e) {
+        }
     }
 
-    public void shutdown() {}
+    public void shutdown() {
+        executorService.shutdown();
+    }
 }
